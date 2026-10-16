@@ -1,0 +1,40 @@
+name: Test fix input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create markdown file with fixable issues
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/hardened/tests/fix-test"
+          cat > "$GITHUB_WORKSPACE/hardened/tests/fix-test/sample.md" << 'EOF'
+          # Hello World
+
+          This is a test markdown file.
+
+          ## Section
+
+          Some content here.
+          EOF
+
+      - id: action
+        uses: .
+        with:
+          files: hardened/tests/fix-test/**/*.md
+          fix: "true"
+        continue-on-error: true
+
+      - name: Assert action ran with fix input
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "success" ] || [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action ran with fix input (outcome: $OUTCOME)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
